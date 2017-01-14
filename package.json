@@ -1,0 +1,49 @@
+{
+  "name": "two-js-hit-detection",
+  "version": "1.0.0",
+  "scripts": {
+    "lint-and-fix": "standard --fix && jshint index.js",
+    "bundle": "browserify index.js -o bundle.js",
+    "start": "budo index.js --live --open --"
+  },
+  "devDependencies": {
+    "jshint": "latest",
+    "standard": "latest",
+    "budo": "^6.0.0"
+  },
+  "browserify": {
+    "transform": [ "browserify-shim" ]
+  },
+  "browser": {
+    "two": "./vendor/two.js" 
+  },
+  "browserify-shim": {
+    "two": "Two" 
+  }, 
+  "standard": {
+  "ignore": [
+    "/vendor/"
+  ]
+}, 
+  "dependencies": {
+    "browserify-shim": "^3.8.12",
+    "rbush": "^2.0.1"
+  },
+  "description": "Illustrate hit testing in two.js without DOM support",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oparisy/two-js-hit-detection.git"
+  },
+  "keywords": [
+    "two.js",
+    "browserify",
+    "collisions"
+  ],
+  "author": "Olivier Parisy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/oparisy/two-js-hit-detection/issues"
+  },
+  "homepage": "https://github.com/oparisy/two-js-hit-detection"
+}
