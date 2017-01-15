@@ -1,12 +1,16 @@
 # two.js and Browserify
 
+## Demo
+
+[click here for a demo](https://oparisy.github.io/two-js-hit-detection/)
+
 ## Goal
 
 An example of hit detection in [two.js](https://two.js.org/), without DOM support.
 
 Packaged in a browserify environment, as described in [two-js-browserify-shim](https://github.com/oparisy/two-js-browserify-shim).
 
-## Usage
+## Build / Dev
 
 ```bash
 npm install
