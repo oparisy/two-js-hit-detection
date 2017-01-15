@@ -2,7 +2,7 @@
 
 ## Demo
 
-[click here for a demo](https://oparisy.github.io/two-js-hit-detection/)
+[Click here for a demo](https://oparisy.github.io/two-js-hit-detection/).
 
 ## Goal
 
