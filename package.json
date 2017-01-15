@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "lint-and-fix": "standard --fix && jshint index.js",
-    "bundle": "browserify index.js -o bundle.js",
+    "bundle": "browserify index.js -o docs/index.js",
     "start": "budo index.js --live --open --"
   },
   "devDependencies": {
