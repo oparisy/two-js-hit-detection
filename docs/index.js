@@ -68,7 +68,10 @@ function main () {
   document.addEventListener('mousemove', function (e) {
     onMove(new Two.Vector(e.clientX, e.clientY))
   })
-
+  document.addEventListener('touchstart', function () {
+    e.preventDefault()
+    return false
+  })
   document.addEventListener('touchmove', function (e) {
     e.preventDefault()
     var touch = e.originalEvent.changedTouches[0]
