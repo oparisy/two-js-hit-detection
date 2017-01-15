@@ -15,5 +15,4 @@ npm run start
 
 ## TODO
 
-* Make hit-detected shapes change color
 * Make position detection compatible with touch interface

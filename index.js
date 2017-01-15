@@ -8,6 +8,9 @@ var rbush = require('rbush')
 var Turtle = require('./lib/turtle.js')
 var arrowhead = require('./lib/arrowHead.js')
 
+var UNSELECTED_COLOR = '#FF8000'
+var SELECTED_COLOR = '#991100'
+
 main()
 
 function main () {
@@ -22,11 +25,15 @@ function main () {
   // Generate a corresponding two.js set of shapes
   var vertices = turtle.getVertices()
   var circles = two.makeGroup()
-  vertices.forEach(function (v) { circles.add(two.makeCircle(v.x, v.y, 30)) })
+  vertices.forEach(function (v) {
+    var c = two.makeCircle(v.x, v.y, 30)
+    c.hit = circleHit(v.x, v.y, 30)
+    circles.add(c)
+  })
   circles.fill = '#FF8000'
   circles.lineWidth = 5
 
-  // Bulk insert circles bounding boxes in an rtree
+  // Bulk insert circles bounding boxes in a spatial index
   var tree = rbush()
   tree.load(circles.children.map(function (c) {
     var bbox = c.getBoundingClientRect(true)
@@ -38,15 +45,9 @@ function main () {
   var path = two.makeCurve(anchors, false, true)
   path.noFill().linewidth = 2
 
-  // Display cursor position (in "global group" space, see below)
-  // Temporary (ugly lag wrt system cursor)
-  var cursor = two.makeCircle(0, 0, 5)
-  cursor.fill = '#8aa2fc'
-
   // Build a global group
-  var root = two.makeGroup([circles, path, cursor])
+  var root = two.makeGroup([circles, path])
   root.stroke = 'orangered'
-  cursor.stroke = '#29568f'
 
   // Center it (and ensure we stay centered)
   center(root)
@@ -77,10 +78,34 @@ function main () {
     return false
   })
 
+  var lastSelected = []
+
   // React to move/touch position
   function onMove (pos) {
-    var posInGroupSpace = pos.subSelf(root.translation)
-    cursor.translation.copy(posInGroupSpace)
+    // Compute position in group space
+    var gpos = pos.subSelf(root.translation)
+
+    // Search for candidates at that position in spatial index
+    var candidates = tree.search({minX: pos.x, minY: pos.y, maxX: pos.x, maxY: pos.y})
+    var selected = candidates.filter(function (c) { return c.shape.hit(gpos) })
+
+    // Update selected elements style
+    lastSelected.forEach(function (e) {
+      e.shape.fill = UNSELECTED_COLOR
+    })
+    selected.forEach(function (e) {
+      e.shape.fill = SELECTED_COLOR
+    })
+    lastSelected = selected
   }
 }
 
+/** Return an "hit function" for a circle */
+function circleHit (x, y, r) {
+  var rsq = r * r
+  return function (pos) {
+    var dx = pos.x - x
+    var dy = pos.y - y
+    return (dx * dx + dy * dy) <= rsq
+  }
+}
