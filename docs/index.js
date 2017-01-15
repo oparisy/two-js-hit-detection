@@ -68,7 +68,7 @@ function main () {
   document.addEventListener('mousemove', function (e) {
     onMove(new Two.Vector(e.clientX, e.clientY))
   })
-  document.addEventListener('touchstart', function () {
+  document.addEventListener('touchstart', function (e) {
     e.preventDefault()
     return false
   })
