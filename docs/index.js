@@ -31,7 +31,7 @@ function main () {
     c.hit = circleHit(v.x, v.y, 30)
     circles.add(c)
   })
-  circles.fill = '#FF8000'
+  circles.fill = UNSELECTED_COLOR
   circles.lineWidth = 5
 
   // Bulk insert circles bounding boxes in a spatial index
