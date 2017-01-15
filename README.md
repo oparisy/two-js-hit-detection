@@ -1,4 +1,4 @@
-# two.js and Browserify
+# two.js Hit Testing
 
 ## Demo
 
