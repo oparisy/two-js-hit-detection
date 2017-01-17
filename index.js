@@ -93,6 +93,6 @@ function main () {
     var bbox = group.getBoundingClientRect(true)
     var bboxCenter = new Two.Vector(bbox.left + bbox.width / 2, bbox.top + bbox.height / 2)
     var delta = new Two.Vector(two.width / 2, two.height / 2).subSelf(bboxCenter)
-    group.translation.copy(delta)
+    group.translation = delta
   }
 }
