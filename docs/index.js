@@ -5,12 +5,12 @@
 'use strict'
 
 var Two = require('two')
-var rbush = require('rbush')
 var Turtle = require('./lib/turtle.js')
 var arrowhead = require('./lib/arrowHead.js')
+var HitTester = require('./lib/hitTester.js')
 
-var UNSELECTED_COLOR = '#FF8000'
-var SELECTED_COLOR = '#991100'
+var NOT_HIT_COLOR = '#FF8000'
+var HIT_COLOR = '#991100'
 
 main()
 
@@ -26,20 +26,9 @@ function main () {
   // Generate a corresponding two.js set of shapes
   var vertices = turtle.getVertices()
   var circles = two.makeGroup()
-  vertices.forEach(function (v) {
-    var c = two.makeCircle(v.x, v.y, 30)
-    c.hit = circleHit(v.x, v.y, 30)
-    circles.add(c)
-  })
-  circles.fill = UNSELECTED_COLOR
+  vertices.forEach(function (v) { circles.add(buildCircle(v.x, v.y, 30)) })
+  circles.fill = NOT_HIT_COLOR
   circles.lineWidth = 5
-
-  // Bulk insert circles bounding boxes in a spatial index
-  var tree = rbush()
-  tree.load(circles.children.map(function (c) {
-    var bbox = c.getBoundingClientRect(true)
-    return {minX: bbox.left, minY: bbox.top, maxX: bbox.right, maxY: bbox.bottom, shape: c}
-  }))
 
   // Also generate the corresponding two.js path
   var anchors = vertices.map(function (v) { return new Two.Anchor(v.x, v.y) })
@@ -56,13 +45,9 @@ function main () {
     center(root)
   })
 
-  // Apply the required translation to "group" so that it is centered in this Two instance
-  function center (group) {
-    var bbox = group.getBoundingClientRect(true)
-    var bboxCenter = new Two.Vector(bbox.left + bbox.width / 2, bbox.top + bbox.height / 2)
-    var delta = new Two.Vector(two.width / 2, two.height / 2).subSelf(bboxCenter)
-    group.translation.copy(delta)
-  }
+  // Build a spatial index
+  var hitTester = new HitTester()
+  hitTester.load(circles.children)
 
   // Keep track of mouse/touch position
   document.addEventListener('mousemove', function (e) {
@@ -79,39 +64,41 @@ function main () {
     return false
   })
 
-  var lastSelected = []
+  var lastHit = []
 
   // React to move/touch position
   function onMove (pos) {
-    // Compute position in group space
+    // Search for hits at that position (in local/group space)
     var gpos = pos.subSelf(root.translation)
+    var hitShapes = hitTester.hit(gpos)
 
-    // Search for candidates at that position in spatial index
-    var candidates = tree.search({minX: pos.x, minY: pos.y, maxX: pos.x, maxY: pos.y})
-    var selected = candidates.filter(function (c) { return c.shape.hit(gpos) })
+    // Update elements style accordingly
+    lastHit.forEach(function (e) {
+      e.fill = NOT_HIT_COLOR
+    })
+    hitShapes.forEach(function (e) {
+      e.fill = HIT_COLOR
+    })
+    lastHit = hitShapes
+  }
 
-    // Update selected elements style
-    lastSelected.forEach(function (e) {
-      e.shape.fill = UNSELECTED_COLOR
-    })
-    selected.forEach(function (e) {
-      e.shape.fill = SELECTED_COLOR
-    })
-    lastSelected = selected
+  /** Build a two.js circle, keeping track of its geometrical properties */
+  function buildCircle (x, y, r) {
+    var c = two.makeCircle(x, y, r)
+    c.geom = {x: x, y: y, r: r, kind: 'circle'}
+    return c
+  }
+
+  /** Apply the required translation to "group" so that it is centered in this Two instance */
+  function center (group) {
+    var bbox = group.getBoundingClientRect(true)
+    var bboxCenter = new Two.Vector(bbox.left + bbox.width / 2, bbox.top + bbox.height / 2)
+    var delta = new Two.Vector(two.width / 2, two.height / 2).subSelf(bboxCenter)
+    group.translation.copy(delta)
   }
 }
 
-/** Return an "hit function" for a circle */
-function circleHit (x, y, r) {
-  var rsq = r * r
-  return function (pos) {
-    var dx = pos.x - x
-    var dy = pos.y - y
-    return (dx * dx + dy * dy) <= rsq
-  }
-}
-
-},{"./lib/arrowHead.js":2,"./lib/turtle.js":3,"rbush":5,"two":6}],2:[function(require,module,exports){
+},{"./lib/arrowHead.js":2,"./lib/hitTester.js":3,"./lib/turtle.js":4,"two":7}],2:[function(require,module,exports){
 /* jshint node: true */
 /* jslint browser: true */
 /* jslint asi: true */
@@ -151,6 +138,56 @@ function sierpinskiArrowheadCurve (order, length, turtle) {
 /* jslint asi: true */
 'use strict'
 
+var rbush = require('rbush')
+
+/** A wrapper for two.js shapes hit testing */
+module.exports = HitTester
+
+function HitTester () {
+  this._tree = rbush()
+}
+
+/** Efficiently add a collection of two.js shapes (augmented with a geom property) to the hit tester */
+HitTester.prototype.load = function (shapes) {
+  this._tree.load(shapes.map(function (shape) {
+    shape.hit = buildHitFunction(shape)
+    var bbox = shape.getBoundingClientRect(true) // "true" since we want local space coordinates
+    return {minX: bbox.left, minY: bbox.top, maxX: bbox.right, maxY: bbox.bottom, shape: shape}
+  }))
+}
+
+/** Return intersected shapes at this position (in the same space as load) */
+HitTester.prototype.hit = function (pos) {
+  var candidates = this._tree.search({minX: pos.x, minY: pos.y, maxX: pos.x, maxY: pos.y})
+  var selected = candidates.filter(function (c) { return c.shape.hit(pos) })
+  return selected.map(function (r) { return r.shape })
+}
+
+/** Build an hit function for this shape */
+function buildHitFunction (shape) {
+  if (shape.geom.kind === 'circle') {
+    return circleHit(shape.geom.x, shape.geom.y, shape.geom.r)
+  }
+
+  throw new Error('Unhandled kind of shape')
+}
+
+/** Return an "hit function" for a circle */
+function circleHit (x, y, r) {
+  var rsq = r * r
+  return function (pos) {
+    var dx = pos.x - x
+    var dy = pos.y - y
+    return (dx * dx + dy * dy) <= rsq
+  }
+}
+
+},{"rbush":6}],4:[function(require,module,exports){
+/* jshint node: true */
+/* jslint browser: true */
+/* jslint asi: true */
+'use strict'
+
 /** A "turtle" generating a continuous set of vertices */
 module.exports = Turtle
 
@@ -184,7 +221,7 @@ Turtle.prototype.getVertices = function () {
   return this.vertices
 }
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 module.exports = partialSort;
@@ -246,7 +283,7 @@ function defaultCompare(a, b) {
     return a < b ? -1 : a > b ? 1 : 0;
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 module.exports = rbush;
@@ -809,7 +846,7 @@ function multiSelect(arr, left, right, n, compare) {
     }
 }
 
-},{"quickselect":4}],6:[function(require,module,exports){
+},{"quickselect":5}],7:[function(require,module,exports){
 (function (global){
 ; var __browserify_shim_require__=require;(function browserifyShim(module, exports, require, define, browserify_shim__define__module__export__) {
 /**
