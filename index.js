@@ -25,7 +25,7 @@ function main () {
   // Generate a corresponding two.js set of shapes
   var vertices = turtle.getVertices()
   var circles = two.makeGroup()
-  vertices.forEach(function (v) { circles.add(buildCircle(v.x, v.y, 30)) })
+  vertices.forEach(function (v) { circles.add(two.makeCircle(v.x, v.y, 30)) })
   circles.fill = NOT_HIT_COLOR
   circles.lineWidth = 5
 
@@ -63,9 +63,8 @@ function main () {
     return false
   })
 
-  var lastHit = []
-
   // React to move/touch position
+  var lastHit = []
   function onMove (pos) {
     // Search for hits at that position (in local/group space)
     var gpos = pos.subSelf(root.translation)
@@ -79,13 +78,6 @@ function main () {
       e.fill = HIT_COLOR
     })
     lastHit = hitShapes
-  }
-
-  /** Build a two.js circle, keeping track of its geometrical properties */
-  function buildCircle (x, y, r) {
-    var c = two.makeCircle(x, y, r)
-    c.geom = {x: x, y: y, r: r, kind: 'circle'}
-    return c
   }
 
   /** Apply the required translation to "group" so that it is centered in this Two instance */
