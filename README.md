@@ -16,7 +16,3 @@ Packaged in a browserify environment, as described in [two-js-browserify-shim](h
 npm install
 npm run start
 ```
-
-## TODO
-
-* Make position detection compatible with touch interface
