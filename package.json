@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "scripts": {
     "lint-and-fix": "standard --fix && jshint index.js",
-    "bundle": "browserify index.js -o docs/index.js",
-    "start": "budo index.js --live --open --"
+    "build": "browserify index.js -o docs/index.js",
+    "start": "budo index.js:docs/index.js --live --open"
   },
   "devDependencies": {
     "jshint": "latest",
     "standard": "latest",
-    "budo": "^6.0.0"
+    "budo": "latest"
   },
   "browserify": {
     "transform": [ "browserify-shim" ]
