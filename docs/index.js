@@ -59,7 +59,7 @@ function main () {
   })
   document.addEventListener('touchmove', function (e) {
     e.preventDefault()
-    var touch = e.originalEvent.changedTouches[0]
+    var touch = e.changedTouches[0]
     onMove(new Two.Vector(touch.pageX, touch.pageY))
     return false
   })
